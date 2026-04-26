@@ -53,15 +53,60 @@ Then set:
 bash scripts/teleop.sh
 ```
 
+Optional flags:
+
+- enable data display: `bash scripts/teleop.sh --display-data`
+
+## 6) Record and upload dataset to Hugging Face (user or org)
+
+`scripts/record.sh` uploads to the logged-in HF user by default.
+
+To upload to an org (for example `rl26-world-models`), set this in `.env`:
+
+```bash
+HF_DATASET_OWNER=rl26-world-models
+```
+
+Then run:
+
+```bash
+bash scripts/record.sh
+```
+
+Task configs live in `configs/tasks/*.json`. `scripts/record.sh` will use
+`configs/tasks/so101-first-dataset.json` by default if present, or you can pass one explicitly:
+
+```bash
+bash scripts/record.sh --config configs/tasks/<TASK_NAME>.json
+```
+
+To create a new recording preset, copy an existing config file and update:
+
+- `profile_name` (local label)
+- `dataset_name` (HF dataset repo name)
+- `task`
+- `num_episodes`, `episode_time_s`, `reset_time_s`
+- camera fields under `camera` (`fallback_index`, `width`, `height`, `fps`)
+
+Keep it minimal before recording:
+
+- verify the camera index with `lerobot-find-cameras opencv`
+- use a unique `dataset_name` for each dataset version
+
 ## Troubleshooting
 
 - `objc ... AVFFrameReceiver ... implemented in both cv2 and av` warning on macOS:
 
+  Keep `av` installed (`lerobot` imports it). If this warning appears but runs
+  are stable, it is usually safe to continue.
+
+- Camera index issues (wrong camera selected or no frames):
+
   ```bash
-  pip uninstall -y av
+  lerobot-find-cameras opencv
   ```
 
-  Then rerun `bash scripts/teleop.sh`.
+  Use the reported OpenCV camera index for your setup.
 
 - Calibration files location (local, not in git):
   - follower: `~/.cache/huggingface/lerobot/calibration/robots/so_follower/<FOLLOWER_ID>.json`

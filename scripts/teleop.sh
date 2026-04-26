@@ -3,6 +3,21 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ENV_FILE="${ROOT_DIR}/.env"
+DISPLAY_DATA=""
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --display-data)
+      DISPLAY_DATA="true"
+      shift
+      ;;
+    *)
+      echo "Unknown argument: $1" >&2
+      echo "Usage: bash scripts/teleop.sh [--display-data]" >&2
+      exit 1
+      ;;
+  esac
+done
 
 if [[ ! -f "${ENV_FILE}" ]]; then
   echo "Missing .env file at: ${ENV_FILE}" >&2
@@ -28,10 +43,25 @@ for var_name in "${required_vars[@]}"; do
   fi
 done
 
-lerobot-teleoperate \
-  --robot.type=so101_follower \
-  --robot.port="${FOLLOWER_PORT}" \
-  --robot.id="${FOLLOWER_ID}" \
-  --teleop.type=so101_leader \
-  --teleop.port="${LEADER_PORT}" \
+# Optional camera settings used for teleoperation display.
+: "${CAMERA_INDEX:=0}"
+: "${CAMERA_WIDTH:=640}"
+: "${CAMERA_HEIGHT:=480}"
+: "${CAMERA_FPS:=30}"
+
+cmd=(
+  uv run lerobot-teleoperate
+  --robot.type=so101_follower
+  --robot.port="${FOLLOWER_PORT}"
+  --robot.id="${FOLLOWER_ID}"
+  --robot.cameras="{ front: {type: opencv, index_or_path: ${CAMERA_INDEX}, width: ${CAMERA_WIDTH}, height: ${CAMERA_HEIGHT}, fps: ${CAMERA_FPS}}}"
+  --teleop.type=so101_leader
+  --teleop.port="${LEADER_PORT}"
   --teleop.id="${LEADER_ID}"
+)
+
+if [[ -n "${DISPLAY_DATA}" ]]; then
+  cmd+=(--display_data="${DISPLAY_DATA}")
+fi
+
+"${cmd[@]}"
