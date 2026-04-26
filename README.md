@@ -73,6 +73,29 @@ Then run:
 bash scripts/record.sh
 ```
 
+For repeated runs on the same dataset id, prefer resume:
+
+```bash
+bash scripts/record.sh --resume
+```
+
+`--resume` continues from local cache at
+`~/.cache/huggingface/lerobot/<owner>/<dataset_name>`.
+
+When resuming, you can update timing/count settings in your task config (for
+example `num_episodes`, `episode_time_s`, `reset_time_s`). These changes apply
+to newly recorded episodes only; previously recorded episodes are unchanged.
+
+Use overwrite when you deleted/reset the Hub dataset and want to recreate it
+with the same dataset id (this clears stale local cache that can cause local
+path conflicts):
+
+```bash
+bash scripts/record.sh --overwrite
+```
+
+`--overwrite` only removes local cache. It does not delete data already on the Hub.
+
 Task configs live in `configs/tasks/*.json`. `scripts/record.sh` will use
 `configs/tasks/so101-first-dataset.json` by default if present, or you can pass one explicitly:
 

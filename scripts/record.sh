@@ -5,6 +5,8 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ENV_FILE="${ROOT_DIR}/.env"
 CONFIG_PATH=""
 DEFAULT_CONFIG="${ROOT_DIR}/configs/tasks/so101-first-dataset.json"
+OVERWRITE=0
+RESUME=0
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -12,13 +14,26 @@ while [[ $# -gt 0 ]]; do
       CONFIG_PATH="${2:-}"
       shift 2
       ;;
+    --overwrite)
+      OVERWRITE=1
+      shift
+      ;;
+    --resume)
+      RESUME=1
+      shift
+      ;;
     *)
       echo "Unknown argument: $1" >&2
-      echo "Usage: bash scripts/record.sh [--config path/to/config.json]" >&2
+      echo "Usage: bash scripts/record.sh [--config path/to/config.json] [--overwrite] [--resume]" >&2
       exit 1
       ;;
   esac
 done
+
+if [[ "${OVERWRITE}" -eq 1 && "${RESUME}" -eq 1 ]]; then
+  echo "Use only one of --overwrite or --resume." >&2
+  exit 1
+fi
 
 if [[ -n "${CONFIG_PATH}" && "${CONFIG_PATH}" != /* ]]; then
   CONFIG_PATH="${ROOT_DIR}/${CONFIG_PATH}"
@@ -126,8 +141,24 @@ if [[ -z "${HF_USER}" ]]; then
 fi
 
 DATASET_OWNER="${HF_DATASET_OWNER:-$HF_USER}"
+LOCAL_DATASET_CACHE="${HOME}/.cache/huggingface/lerobot/${DATASET_OWNER}/${DATASET_NAME}"
 
 echo "Recording dataset to: ${DATASET_OWNER}/${DATASET_NAME}"
+
+if [[ "${OVERWRITE}" -eq 1 ]]; then
+  if [[ -e "${LOCAL_DATASET_CACHE}" ]]; then
+    echo "Removing existing local dataset cache path: ${LOCAL_DATASET_CACHE}"
+    rm -rf "${LOCAL_DATASET_CACHE}"
+  else
+    echo "No local dataset cache path found at: ${LOCAL_DATASET_CACHE}"
+  fi
+fi
+
+resume_args=()
+if [[ "${RESUME}" -eq 1 ]]; then
+  resume_args+=(--resume=true)
+  resume_args+=(--dataset.root="${LOCAL_DATASET_CACHE}")
+fi
 
 uv run lerobot-record \
   --robot.type=so101_follower \
@@ -142,4 +173,5 @@ uv run lerobot-record \
   --dataset.num_episodes="${NUM_EPISODES}" \
   --dataset.episode_time_s="${EPISODE_TIME_S}" \
   --dataset.reset_time_s="${RESET_TIME_S}" \
+  "${resume_args[@]}" \
   --display_data=true
