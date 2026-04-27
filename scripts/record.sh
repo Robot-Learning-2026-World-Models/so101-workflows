@@ -4,7 +4,6 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ENV_FILE="${ROOT_DIR}/.env"
 CONFIG_PATH=""
-DEFAULT_CONFIG="${ROOT_DIR}/configs/tasks/so101-first-dataset.json"
 OVERWRITE=0
 RESUME=0
 
@@ -24,7 +23,7 @@ while [[ $# -gt 0 ]]; do
       ;;
     *)
       echo "Unknown argument: $1" >&2
-      echo "Usage: bash scripts/record.sh [--config path/to/config.json] [--overwrite] [--resume]" >&2
+      echo "Usage: bash scripts/record.sh --config path/to/config.json [--overwrite] [--resume]" >&2
       exit 1
       ;;
   esac
@@ -37,10 +36,6 @@ fi
 
 if [[ -n "${CONFIG_PATH}" && "${CONFIG_PATH}" != /* ]]; then
   CONFIG_PATH="${ROOT_DIR}/${CONFIG_PATH}"
-fi
-
-if [[ -z "${CONFIG_PATH}" && -f "${DEFAULT_CONFIG}" ]]; then
-  CONFIG_PATH="${DEFAULT_CONFIG}"
 fi
 
 if [[ ! -f "${ENV_FILE}" ]]; then
@@ -67,16 +62,20 @@ for var_name in "${required_vars[@]}"; do
   fi
 done
 
-# Optional task config override via JSON file.
-if [[ -n "${CONFIG_PATH}" ]]; then
-  if [[ ! -f "${CONFIG_PATH}" ]]; then
-    echo "Config not found: ${CONFIG_PATH}" >&2
-    exit 1
-  fi
+if [[ -z "${CONFIG_PATH}" ]]; then
+  echo "Missing required argument: --config path/to/config.json" >&2
+  echo "Usage: bash scripts/record.sh --config path/to/config.json [--overwrite] [--resume]" >&2
+  exit 1
+fi
 
-  # Parse a task config JSON and export known keys as shell assignments.
-  eval "$(
-    python - "${CONFIG_PATH}" <<'PY'
+if [[ ! -f "${CONFIG_PATH}" ]]; then
+  echo "Config not found: ${CONFIG_PATH}" >&2
+  exit 1
+fi
+
+# Parse a task config JSON and export known keys as shell assignments.
+eval "$(
+  python - "${CONFIG_PATH}" <<'PY'
 import json
 import shlex
 import sys
@@ -105,8 +104,7 @@ for key, value in pairs.items():
     if value is not None and value != "":
         print(f"{key}={shlex.quote(str(value))}")
 PY
-  )"
-fi
+)"
 
 # Optional overrides via env vars
 : "${DATASET_NAME:=so101-first-dataset}"
@@ -119,6 +117,22 @@ fi
 : "${CAMERA_WIDTH:=640}"
 : "${CAMERA_HEIGHT:=480}"
 : "${CAMERA_FPS:=30}"
+: "${HF_DATASET_PRIVATE:=true}"
+
+HF_DATASET_PRIVATE_NORMALIZED="$(printf '%s' "${HF_DATASET_PRIVATE}" | tr '[:upper:]' '[:lower:]')"
+case "${HF_DATASET_PRIVATE_NORMALIZED}" in
+  true|1|yes|y)
+    HF_DATASET_PRIVATE_NORMALIZED="true"
+    ;;
+  false|0|no|n)
+    HF_DATASET_PRIVATE_NORMALIZED="false"
+    ;;
+  *)
+    echo "Invalid HF_DATASET_PRIVATE value: ${HF_DATASET_PRIVATE}" >&2
+    echo "Use one of: true/false, 1/0, yes/no, y/n." >&2
+    exit 1
+    ;;
+esac
 
 # Ensure HF CLI auth exists (do not force interactive login in script)
 if ! hf auth whoami >/dev/null 2>&1; then
@@ -144,6 +158,7 @@ DATASET_OWNER="${HF_DATASET_OWNER:-$HF_USER}"
 LOCAL_DATASET_CACHE="${HOME}/.cache/huggingface/lerobot/${DATASET_OWNER}/${DATASET_NAME}"
 
 echo "Recording dataset to: ${DATASET_OWNER}/${DATASET_NAME}"
+echo "Dataset visibility: $([[ "${HF_DATASET_PRIVATE_NORMALIZED}" == "true" ]] && echo "private" || echo "public")"
 
 if [[ "${OVERWRITE}" -eq 1 ]]; then
   if [[ -e "${LOCAL_DATASET_CACHE}" ]]; then
@@ -154,24 +169,27 @@ if [[ "${OVERWRITE}" -eq 1 ]]; then
   fi
 fi
 
-resume_args=()
+cmd=(
+  uv run lerobot-record
+  --robot.type=so101_follower
+  --robot.port="${FOLLOWER_PORT}"
+  --robot.id="${FOLLOWER_ID}"
+  --teleop.type=so101_leader
+  --teleop.port="${LEADER_PORT}"
+  --teleop.id="${LEADER_ID}"
+  --robot.cameras="{ front: {type: opencv, index_or_path: ${CAMERA_INDEX}, width: ${CAMERA_WIDTH}, height: ${CAMERA_HEIGHT}, fps: ${CAMERA_FPS}}}"
+  --dataset.repo_id="${DATASET_OWNER}/${DATASET_NAME}"
+  --dataset.single_task="${TASK}"
+  --dataset.num_episodes="${NUM_EPISODES}"
+  --dataset.episode_time_s="${EPISODE_TIME_S}"
+  --dataset.reset_time_s="${RESET_TIME_S}"
+  --dataset.private="${HF_DATASET_PRIVATE_NORMALIZED}"
+  --display_data=true
+)
+
 if [[ "${RESUME}" -eq 1 ]]; then
-  resume_args+=(--resume=true)
-  resume_args+=(--dataset.root="${LOCAL_DATASET_CACHE}")
+  cmd+=(--resume=true)
+  cmd+=(--dataset.root="${LOCAL_DATASET_CACHE}")
 fi
 
-uv run lerobot-record \
-  --robot.type=so101_follower \
-  --robot.port="${FOLLOWER_PORT}" \
-  --robot.id="${FOLLOWER_ID}" \
-  --teleop.type=so101_leader \
-  --teleop.port="${LEADER_PORT}" \
-  --teleop.id="${LEADER_ID}" \
-  --robot.cameras="{ front: {type: opencv, index_or_path: ${CAMERA_INDEX}, width: ${CAMERA_WIDTH}, height: ${CAMERA_HEIGHT}, fps: ${CAMERA_FPS}}}" \
-  --dataset.repo_id="${DATASET_OWNER}/${DATASET_NAME}" \
-  --dataset.single_task="${TASK}" \
-  --dataset.num_episodes="${NUM_EPISODES}" \
-  --dataset.episode_time_s="${EPISODE_TIME_S}" \
-  --dataset.reset_time_s="${RESET_TIME_S}" \
-  "${resume_args[@]}" \
-  --display_data=true
+"${cmd[@]}"

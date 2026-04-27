@@ -59,6 +59,15 @@ Optional flags:
 
 ## 6) Record and upload dataset to Hugging Face (user or org)
 
+Task configs live in `configs/tasks/*.json`, and `--config` is required:
+
+```bash
+bash scripts/record.sh --config configs/tasks/<TASK_NAME>.json
+```
+
+Choose your config first before recording, especially if you switch datasets
+often.
+
 `scripts/record.sh` uploads to the logged-in HF user by default.
 
 To upload to an org (for example `rl26-world-models`), set this in `.env`:
@@ -67,16 +76,22 @@ To upload to an org (for example `rl26-world-models`), set this in `.env`:
 HF_DATASET_OWNER=rl26-world-models
 ```
 
+Uploads are private by default. To make uploads public, set this in `.env`:
+
+```bash
+HF_DATASET_PRIVATE=false
+```
+
 Then run:
 
 ```bash
-bash scripts/record.sh
+bash scripts/record.sh --config configs/tasks/<TASK_NAME>.json
 ```
 
 For repeated runs on the same dataset id, prefer resume:
 
 ```bash
-bash scripts/record.sh --resume
+bash scripts/record.sh --config configs/tasks/<TASK_NAME>.json --resume
 ```
 
 `--resume` continues from local cache at
@@ -91,17 +106,10 @@ with the same dataset id (this clears stale local cache that can cause local
 path conflicts):
 
 ```bash
-bash scripts/record.sh --overwrite
+bash scripts/record.sh --config configs/tasks/<TASK_NAME>.json --overwrite
 ```
 
 `--overwrite` only removes local cache. It does not delete data already on the Hub.
-
-Task configs live in `configs/tasks/*.json`. `scripts/record.sh` will use
-`configs/tasks/so101-first-dataset.json` by default if present, or you can pass one explicitly:
-
-```bash
-bash scripts/record.sh --config configs/tasks/<TASK_NAME>.json
-```
 
 To create a new recording preset, copy an existing config file and update:
 
