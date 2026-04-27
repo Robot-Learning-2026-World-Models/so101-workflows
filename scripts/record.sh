@@ -107,9 +107,7 @@ PY
 )"
 
 # Optional overrides via env vars
-: "${DATASET_NAME:=so101-first-dataset}"
 : "${HF_DATASET_OWNER:=}"
-: "${TASK:=pick up the object and place it in the target area}"
 : "${NUM_EPISODES:=20}"
 : "${EPISODE_TIME_S:=25}"
 : "${RESET_TIME_S:=10}"
@@ -119,20 +117,25 @@ PY
 : "${CAMERA_FPS:=30}"
 : "${HF_DATASET_PRIVATE:=true}"
 
-HF_DATASET_PRIVATE_NORMALIZED="$(printf '%s' "${HF_DATASET_PRIVATE}" | tr '[:upper:]' '[:lower:]')"
-case "${HF_DATASET_PRIVATE_NORMALIZED}" in
-  true|1|yes|y)
-    HF_DATASET_PRIVATE_NORMALIZED="true"
-    ;;
-  false|0|no|n)
-    HF_DATASET_PRIVATE_NORMALIZED="false"
-    ;;
-  *)
-    echo "Invalid HF_DATASET_PRIVATE value: ${HF_DATASET_PRIVATE}" >&2
-    echo "Use one of: true/false, 1/0, yes/no, y/n." >&2
+required_config_vars=(
+  DATASET_NAME
+  TASK
+)
+
+for var_name in "${required_config_vars[@]}"; do
+  if [[ -z "${!var_name:-}" ]]; then
+    echo "Missing required config field: ${var_name}" >&2
+    echo "Add it to your --config JSON file." >&2
     exit 1
-    ;;
-esac
+  fi
+done
+
+HF_DATASET_PRIVATE_NORMALIZED="$(printf '%s' "${HF_DATASET_PRIVATE}" | tr '[:upper:]' '[:lower:]')"
+if [[ "${HF_DATASET_PRIVATE_NORMALIZED}" == "true" ]]; then
+  HF_DATASET_PRIVATE_NORMALIZED="true"
+else
+  HF_DATASET_PRIVATE_NORMALIZED="false"
+fi
 
 # Ensure HF CLI auth exists (do not force interactive login in script)
 if ! hf auth whoami >/dev/null 2>&1; then
