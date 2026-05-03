@@ -1,0 +1,24 @@
+{
+  "profile_name": "so101-task1-mini",
+  "hf_dataset_owner": "rl26-world-models",
+  "dataset_name": "so101-task1-mini-v1",
+  "task": "roll the object from the start position to the target position",
+  "num_episodes": 10,
+  "episode_time_s": 40,
+  "reset_time_s": 6,
+  "camera": {
+    "backend": "opencv",
+    "preferred_name": "USB2.0_CAM1",
+    "fallback_index": 0,
+    "width": 640,
+    "height": 480,
+    "fps": 30,
+    "min_test_frames": 30
+  },
+  "robot": {
+    "follower_port_env": "FOLLOWER_PORT",
+    "leader_port_env": "LEADER_PORT",
+    "follower_id_env": "FOLLOWER_ID",
+    "leader_id_env": "LEADER_ID"
+  }
+}

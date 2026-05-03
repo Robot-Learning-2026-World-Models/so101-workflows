@@ -124,6 +124,19 @@ Keep it minimal before recording:
 - verify the camera index with `lerobot-find-cameras opencv`
 - use a unique `dataset_name` for each dataset version
 
+## 7) Replay an episode on the follower
+
+Replays stored actions from a LeRobot dataset (local cache under
+`~/.cache/huggingface/lerobot/...`, or pulled from the Hub if needed).
+
+```bash
+bash scripts/replay.sh --dataset <dataset_repo_name_or_owner/name> --episode <index>
+```
+
+If you pass just the repo name (as in your task config’s `dataset_name`), set
+`HF_DATASET_OWNER` in `.env` (same as for recording). Or pass the full id, for
+example `rl26-world-models/so101-pick-place-v1`. Replay runs at 30 fps.
+
 ## Troubleshooting
 
 - `objc ... AVFFrameReceiver ... implemented in both cv2 and av` warning on macOS:

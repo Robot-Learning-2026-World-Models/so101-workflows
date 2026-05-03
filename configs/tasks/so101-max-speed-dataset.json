@@ -1,0 +1,24 @@
+{
+  "profile_name": "so101-max-speed-dataset",
+  "hf_dataset_owner": "rl26-world-models",
+  "dataset_name": "so101-max-speed",
+  "task": "swing the follower arm as fast as possible and knock a lightweight object",
+  "num_episodes": 3,
+  "episode_time_s": 30,
+  "reset_time_s": 8,
+  "camera": {
+    "backend": "opencv",
+    "preferred_name": "USB2.0_CAM1",
+    "fallback_index": 0,
+    "width": 640,
+    "height": 480,
+    "fps": 30,
+    "min_test_frames": 30
+  },
+  "robot": {
+    "follower_port_env": "FOLLOWER_PORT",
+    "leader_port_env": "LEADER_PORT",
+    "follower_id_env": "FOLLOWER_ID",
+    "leader_id_env": "LEADER_ID"
+  }
+}
