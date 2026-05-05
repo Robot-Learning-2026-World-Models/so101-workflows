@@ -6,3 +6,5 @@ __pycache__/
 .python-version
 .DS_Store
 cam_images/*.png
+
+logs
