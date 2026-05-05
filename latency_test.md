@@ -17,6 +17,6 @@ CLIENT_DEVICE=cpu \
 DURATION_S=30 \
 CAMERA_WIDTH=160 \
 CAMERA_HEIGHT=120 \
-VERBOSE=false \
+VERBOSE=true \
 ROBOT_LOG_EVERY=0 \
 bash scripts/fake_async_latency_client.sh`
