@@ -2,12 +2,15 @@
 set -euo pipefail
 
 # Mac-side latency test for a Brev-hosted LeRobot async policy server.
-# Keep `brev port-forward <instance-name> --port 18080:8080` running separately.
 
 BREV_INSTANCE="${BREV_INSTANCE:-}"
 BREV_HOST="${BREV_HOST:-}"
 BREV_SSH_PORT="${BREV_SSH_PORT:-22}"
 BREV_PING_COUNT="${BREV_PING_COUNT:-20}"
+PORT_FORWARD="${PORT_FORWARD:-true}"
+LOCAL_PORT="${LOCAL_PORT:-18080}"
+REMOTE_PORT="${REMOTE_PORT:-8080}"
+READY_TIMEOUT_S="${READY_TIMEOUT_S:-30}"
 
 if [[ -z "${BREV_INSTANCE}" ]]; then
   if ! command -v brev >/dev/null 2>&1; then
@@ -93,12 +96,44 @@ else
   echo "Set BREV_HOST=ec2-...compute.amazonaws.com to enable it."
 fi
 
-brev port-forward "${BREV_INSTANCE}" --port 18080:8080
+if [[ "${PORT_FORWARD}" == "true" ]]; then
+  brev port-forward "${BREV_INSTANCE}" --port "${LOCAL_PORT}:${REMOTE_PORT}"
+fi
+
+export SERVER_ADDRESS="${SERVER_ADDRESS:-127.0.0.1:${LOCAL_PORT}}"
+
+echo "Waiting for gRPC policy server at ${SERVER_ADDRESS}..."
+SERVER_ADDRESS="${SERVER_ADDRESS}" READY_TIMEOUT_S="${READY_TIMEOUT_S}" uv run python - <<'PY'
+import os
+import sys
+import time
+
+import grpc
+
+server_address = os.environ["SERVER_ADDRESS"]
+deadline = time.monotonic() + float(os.environ["READY_TIMEOUT_S"])
+last_error = None
+
+while time.monotonic() < deadline:
+    channel = grpc.insecure_channel(server_address)
+    try:
+        grpc.channel_ready_future(channel).result(timeout=2)
+        channel.close()
+        print(f"gRPC policy server is ready at {server_address}")
+        sys.exit(0)
+    except Exception as exc:  # noqa: BLE001 - shell script diagnostic
+        last_error = exc
+        channel.close()
+        time.sleep(1)
+
+print(f"Timed out waiting for gRPC policy server at {server_address}: {last_error}", file=sys.stderr)
+print("Make sure brev_latency_test_server.sh is running and says 'PolicyServer started'.", file=sys.stderr)
+sys.exit(1)
+PY
 
 echo
 echo "Starting LeRobot async latency client..."
 
-export SERVER_ADDRESS="${SERVER_ADDRESS:-127.0.0.1:18080}"
 export PRETRAINED_NAME_OR_PATH="${PRETRAINED_NAME_OR_PATH:-outputs/fake_act_so101}"
 export POLICY_TYPE="${POLICY_TYPE:-act}"
 export POLICY_DEVICE="${POLICY_DEVICE:-cuda}"

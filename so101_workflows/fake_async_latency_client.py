@@ -61,7 +61,8 @@ class InstrumentedRobotClient(RobotClient):
         self.action_schedule_lag_ms: list[float] = []
         self.obs_to_action_execute_ms: list[float] = []
         self.first_action_obs_to_execute_ms: list[float] = []
-        self.action_origins: dict[int, tuple[float, int]] = {}
+        self.first_executable_action_obs_to_execute_ms: list[float] = []
+        self.action_origins: dict[int, tuple[float, int, int | None]] = {}
 
     def receive_actions(self, verbose: bool = False):
         """Receive action chunks and record observation-to-chunk timing."""
@@ -94,6 +95,16 @@ class InstrumentedRobotClient(RobotClient):
                     first_action_timestep = timed_actions[0].get_timestep()
                     first_action_timestamp = timed_actions[0].get_timestamp()
                     chunk_latency_ms = (receive_time - first_action_timestamp) * 1000
+                    with self.latest_action_lock:
+                        latest_action = self.latest_action
+                    first_executable_timestep = next(
+                        (
+                            timed_action.get_timestep()
+                            for timed_action in timed_actions
+                            if timed_action.get_timestep() > latest_action
+                        ),
+                        None,
+                    )
 
                     with self.metrics_lock:
                         self.chunk_receive_latencies_ms.append(chunk_latency_ms)
@@ -102,12 +113,10 @@ class InstrumentedRobotClient(RobotClient):
                             self.action_origins[timed_action.get_timestep()] = (
                                 first_action_timestamp,
                                 first_action_timestep,
+                                first_executable_timestep,
                             )
 
                     if verbose:
-                        with self.latest_action_lock:
-                            latest_action = self.latest_action
-
                         old_size, old_timesteps = self._inspect_action_queue()
                         if not old_timesteps:
                             old_timesteps = [latest_action]
@@ -171,11 +180,13 @@ class InstrumentedRobotClient(RobotClient):
             origin = self.action_origins.pop(action_timestep, None)
             self.action_schedule_lag_ms.append((action_execute_time - action_timestamp) * 1000)
             if origin is not None:
-                origin_timestamp, origin_timestep = origin
+                origin_timestamp, origin_timestep, first_executable_timestep = origin
                 obs_to_execute_ms = (action_execute_time - origin_timestamp) * 1000
                 self.obs_to_action_execute_ms.append(obs_to_execute_ms)
                 if action_timestep == origin_timestep:
                     self.first_action_obs_to_execute_ms.append(obs_to_execute_ms)
+                if action_timestep == first_executable_timestep:
+                    self.first_executable_action_obs_to_execute_ms.append(obs_to_execute_ms)
 
         if verbose:
             with self.action_queue_lock:
@@ -267,6 +278,12 @@ def main(cfg: FakeLatencyClientConfig) -> None:
         "first_action_obs_to_execute_ms": _summary_stats_ms(client.first_action_obs_to_execute_ms),
         "first_action_obs_to_execute_ms_after_first": _summary_stats_ms(
             client.first_action_obs_to_execute_ms[1:]
+        ),
+        "first_executable_action_obs_to_execute_ms": _summary_stats_ms(
+            client.first_executable_action_obs_to_execute_ms
+        ),
+        "first_executable_action_obs_to_execute_ms_after_first": _summary_stats_ms(
+            client.first_executable_action_obs_to_execute_ms[1:]
         ),
     }
 
