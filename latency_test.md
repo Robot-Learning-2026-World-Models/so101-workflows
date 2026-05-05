@@ -3,6 +3,7 @@ brev ssh-key and add it to GitHub → Settings → SSH and GPG keys
 
 On brev:
 Clone using ssh: `git@github.com:Robot-Learning-2026-World-Models/so101-workflows.git`
+`git switch async`
 `./brev_setup.sh`
 `./brev_latency_test.sh`
 
