@@ -1,10 +1,26 @@
-import cv2
-import pybooklid
+"""
+Camera preview and calibration capture.
+
+  --mode opencv (default): raw preview; ENTER/s save, q / ESC quit (no overlays).
+  --mode mac: resolution overlays + lid readout + optional -a gong; o saves with overlays burned in.
+
+Preview keys (opencv): ENTER / s -> save, q / ESC -> quit
+Preview keys (mac):    ENTER / s -> save clean, o -> save with overlays, q / ESC -> quit
+"""
+
+from __future__ import annotations
+
 import argparse
-import os
 import time
 from pathlib import Path
-from playsound3 import playsound
+
+import cv2
+
+# ---- Config ---------------------------------------------------------------
+REPO_ROOT = Path(__file__).resolve().parent.parent
+DEFAULT_SAVE_DIR = REPO_ROOT / "outputs/captured_images"  # <-- edit me
+DEFAULT_PREFIX = "checkerboard"  # <-- edit me
+# ---------------------------------------------------------------------------
 
 angle_tol = 5e-2
 
@@ -13,19 +29,20 @@ resolution_overlays = [
     (512, 512),
     (640, 640),
     (960, 540),
-    (1280, 720)
+    (1280, 720),
 ]
 
 OVERLAY_COLORS = [
     (0, 255, 255),
     (255, 0, 255),
     (0, 165, 255),
-    (0, 255, 0), 
-    (255, 0, 0), 
+    (0, 255, 0),
+    (255, 0, 0),
 ]
 
 
-def draw_overlays(frame):
+def draw_mac_rects_and_lid(frame) -> None:
+    """Resolution guides + lid angle (mac mode only)."""
     h, w = frame.shape[:2]
     cx, cy = w // 2, h // 2
     for i, (rw, rh) in enumerate(resolution_overlays):
@@ -39,68 +56,161 @@ def draw_overlays(frame):
         cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
         label = f"{rw}x{rh}"
         (tw, th), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 1)
-        cv2.putText(frame, label, (x2 - tw - 4, y2 - 4), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1, cv2.LINE_AA)
+        cv2.putText(
+            frame,
+            label,
+            (x2 - tw - 4, y2 - 4),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.5,
+            color,
+            1,
+            cv2.LINE_AA,
+        )
 
     try:
+        import pybooklid
+
         angle = pybooklid.read_lid_angle()
         angle_label = f"lid: {angle:.3f}"
     except Exception:
         angle_label = "lid: N/A"
-    cv2.putText(frame, angle_label, (16, 52), cv2.FONT_HERSHEY_SIMPLEX, 1.6, (0, 0, 255), 3, cv2.LINE_AA)
+    cv2.putText(
+        frame,
+        angle_label,
+        (16, 52),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        1.6,
+        (0, 0, 255),
+        3,
+        cv2.LINE_AA,
+    )
 
 
-def main(args):
-    if (tgt := args.mac_lid_angle_target) is not None:
+def draw_mac_preview(frame, idx: int) -> None:
+    """Live HUD: rectangles, lid, and saved index."""
+    draw_mac_rects_and_lid(frame)
+    cv2.putText(
+        frame,
+        f"saved: {idx}",
+        (10, 30),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        0.8,
+        (0, 255, 0),
+        2,
+        cv2.LINE_AA,
+    )
+
+
+def main(args: argparse.Namespace) -> None:
+    if args.mac_lid_angle_target is not None and args.mode != "mac":
+        raise SystemExit("--mac-lid-angle-target requires --mode mac")
+
+    if args.mode == "mac" and args.mac_lid_angle_target is not None:
+        import pybooklid
+        from playsound3 import playsound
+
+        tgt = args.mac_lid_angle_target
         while True:
             current_angle = pybooklid.read_lid_angle()
             if abs(current_angle - tgt) < angle_tol:
                 print(f"Target angle of {tgt} reached!")
-                playsound("assets/gong.mp3")
+                playsound(str(REPO_ROOT / "assets" / "gong.mp3"))
                 break
             print(f"{current_angle=}")
             time.sleep(0.02)
         print(f"Current angle: {pybooklid.read_lid_angle()}")
 
-    save_dir = Path("cam_images")
-    save_dir.mkdir(exist_ok=True)
+    save_dir = Path(args.save_dir)
+    save_dir.mkdir(parents=True, exist_ok=True)
+
+    prefix = args.prefix
+    existing = list(save_dir.glob(f"{prefix}_*.png"))
+    idx = len(existing)
 
     cap = cv2.VideoCapture(args.camera_idx)
     if not cap.isOpened():
         raise RuntimeError(f"Cannot open camera index {args.camera_idx}")
 
-    print("Press 's' to save clean frame, 'o' to save frame with overlays, 'q' to quit.")
+    win = "cam_preview"
+    cv2.namedWindow(win, cv2.WINDOW_NORMAL)
 
-    while True:
-        ret, frame = cap.read()
-        if not ret:
-            print("Failed to grab frame.")
-            break
+    print(f"Camera index: {args.camera_idx}")
+    print(f"Saving to: {save_dir.resolve()}")
+    if args.mode == "mac":
+        print(
+            "ENTER / s = save clean, o = save with overlays, q / ESC = quit."
+        )
+    else:
+        print("ENTER / s = save clean, q / ESC = quit.")
 
-        display = frame.copy()
-        draw_overlays(display)
-        cv2.imshow("cam_preview", display)
-        key = cv2.waitKey(1) & 0xFF
-        ts = int(time.time())
-        if key == ord('s'):
-            path = save_dir / f"{ts}_clean.png"
-            cv2.imwrite(str(path), frame)
-            print(f"Saved clean frame: {path}")
-        elif key == ord('o'):
-            overlay_frame = frame.copy()
-            draw_overlays(overlay_frame)
-            path = save_dir / f"{ts}_overlay.png"
-            cv2.imwrite(str(path), overlay_frame)
-            print(f"Saved overlay frame: {path}")
-        elif key == ord('q'):
-            break
+    try:
+        while True:
+            ret, frame = cap.read()
+            if not ret:
+                print("Failed to grab frame.")
+                break
 
-    cap.release()
-    cv2.destroyAllWindows()
+            display = frame.copy()
+            if args.mode == "mac":
+                draw_mac_preview(display, idx)
+            cv2.imshow(win, display)
+
+            key = cv2.waitKey(1) & 0xFF
+            if key in (27, ord("q")):
+                break
+            if key in (13, 10, ord("s")):
+                path = save_dir / f"{prefix}_{idx:02d}.png"
+                cv2.imwrite(str(path), frame)
+                print(f"saved {path.name}")
+                idx += 1
+            elif args.mode == "mac" and key == ord("o"):
+                overlay_frame = frame.copy()
+                draw_mac_rects_and_lid(overlay_frame)
+                path = save_dir / f"{prefix}_{idx:02d}.png"
+                cv2.imwrite(str(path), overlay_frame)
+                print(f"saved (with overlays) {path.name}")
+                idx += 1
+    finally:
+        cap.release()
+        cv2.destroyAllWindows()
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(prog="World's best camera setup script (with gongs)", description="Use this script to position the camera, grab calibration images, and see different potential crops")
-    parser.add_argument("-a", "--mac-lid-angle-target", type=int, default=None, required=False)
-    parser.add_argument("-c", "--camera-idx", type=int, default=0, required=False)
+    parser = argparse.ArgumentParser(
+        prog="cam_preview",
+        description="Preview camera; opencv = minimal UI, mac = crop/lid overlays.",
+    )
+    parser.add_argument(
+        "--mode",
+        choices=("opencv", "mac"),
+        default="opencv",
+        help="opencv: raw preview, no overlays. mac: crop overlays + lid (pybooklid).",
+    )
+    parser.add_argument(
+        "-a",
+        "--mac-lid-angle-target",
+        type=int,
+        default=None,
+        help="Mac mode only: poll lid until this angle (then play gong).",
+    )
+    parser.add_argument(
+        "-c",
+        "--camera-idx",
+        type=int,
+        default=0,
+        help="OpenCV camera index (same as cv2.VideoCapture index). Default: 0.",
+    )
+    parser.add_argument(
+        "--save-dir",
+        type=Path,
+        default=DEFAULT_SAVE_DIR,
+        help=f"Directory for PNGs (default: {DEFAULT_SAVE_DIR})",
+    )
+    parser.add_argument(
+        "--prefix",
+        type=str,
+        default=DEFAULT_PREFIX,
+        help=f"Filename prefix: <prefix>_NN.png (default: {DEFAULT_PREFIX})",
+    )
     args = parser.parse_args()
     main(args)

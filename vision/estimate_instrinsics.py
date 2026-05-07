@@ -6,7 +6,10 @@ import pprint
 import json
 import matplotlib
 import matplotlib.pyplot as plt
+from pathlib import Path
 
+REPO_ROOT = Path(__file__).resolve().parent.parent
+OUTPUT_DIR = REPO_ROOT / "configs" / "calibration" / "camera"
 
 def calibrate_camera(image_dir, board_size, square_size, output_filename, visualize) -> dict[str, Any]:
     """
@@ -17,7 +20,7 @@ def calibrate_camera(image_dir, board_size, square_size, output_filename, visual
         board_size (tuple): Number of inner corners (rows, cols) in the checkerboard.
         square_size (float): Size of each square in the checkerboard (in mm).
         pixel_pitch (float): Pixel pitch of the camera sensor (in microns).
-        output_filename (str, optional): Name of the JSON file to save calibration data. Defaults to "calibration.json".
+        output_filename (str, optional): Name of the JSON file to save calibration data in /configs/calibration/camera/ directory. Defaults to "camera_intrinsics.json".
 
     Returns:
         dict: Calibration data (camera matrix, distortion coefficients, etc.).
@@ -101,7 +104,8 @@ def calibrate_camera(image_dir, board_size, square_size, output_filename, visual
         "square_size_mm": square_size,
         "rms_error": ret
     }
-    output_path = os.path.join(image_dir, output_filename)
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    output_path = OUTPUT_DIR / output_filename
     with open(output_path, 'w') as outfile:
         json.dump(calibration_data, outfile, indent=4)
 
