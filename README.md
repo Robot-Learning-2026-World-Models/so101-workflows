@@ -1,16 +1,30 @@
 # so101-workflows
 
-Helper scripts for SO-101 teleoperation using LeRobot as a third-party dependency.
+Helper scripts for SO-101 teleoperation using LeRobot from the
+[`third_party/lerobot`](third_party/lerobot) git submodule (pinned fork).
 
-## 1) Install LeRobot with uv
+## 1) Clone this repository and install with uv
 
-Use Python 3.12, then install LeRobot from PyPI with Feetech motor support:
+### Clone and submodule
+
+LeRobot is not installed from PyPI in this workflow: the repo includes it as a
+submodule under `third_party/lerobot`, and `uv` resolves it from there via
+`[tool.uv.sources]` in `pyproject.toml`. After cloning, populate that submodule:
+
+```bash
+git clone https://github.com/Robot-Learning-2026-World-Models/so101-workflows.git
+cd so101-workflows
+git submodule update --init --recursive
+```
+
+### Install with uv
+
+Use Python 3.12, then install project dependencies with `uv sync`.
 
 ```bash
 uv python install 3.12
 uv venv --python 3.12
 source .venv/bin/activate
-uv pip install 'lerobot[feetech]'
 uv sync
 ```
 

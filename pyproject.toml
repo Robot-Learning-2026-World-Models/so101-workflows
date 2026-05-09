@@ -5,10 +5,13 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = "==3.12.*"
 dependencies = [
-    "lerobot[feetech]>=0.5.1",
+    "lerobot[feetech,core_scripts]>=0.5.1",
     "matplotlib>=3.10.9",
     "playsound3>=3.3.1",
     "pybooklid>=1.0.0",
     "rerun-sdk>=0.26.2",
     "huggingface-hub>=0.23.0",
 ]
+
+[tool.uv.sources]
+lerobot = { path = "third_party/lerobot", editable = true }

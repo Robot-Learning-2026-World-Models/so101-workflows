@@ -1,0 +1,3 @@
+[submodule "third_party/lerobot"]
+	path = third_party/lerobot
+	url = https://github.com/Robot-Learning-2026-World-Models/lerobot-rl26-wm.git
