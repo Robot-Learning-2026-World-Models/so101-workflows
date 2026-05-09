@@ -1568,6 +1568,7 @@ name = "so101-workflows"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
+    { name = "huggingface-hub" },
     { name = "lerobot", extra = ["feetech"] },
     { name = "matplotlib" },
     { name = "playsound3" },
@@ -1577,6 +1578,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
+    { name = "huggingface-hub", specifier = ">=0.23.0" },
     { name = "lerobot", extras = ["feetech"], specifier = ">=0.5.1" },
     { name = "matplotlib", specifier = ">=3.10.9" },
     { name = "playsound3", specifier = ">=3.3.1" },

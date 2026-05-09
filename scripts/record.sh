@@ -6,6 +6,7 @@ ENV_FILE="${ROOT_DIR}/.env"
 CONFIG_PATH=""
 OVERWRITE=0
 RESUME=0
+CAMERAS=()
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -21,9 +22,14 @@ while [[ $# -gt 0 ]]; do
       RESUME=1
       shift
       ;;
+    --camera)
+      CAMERAS+=("${2:-}")
+      shift 2
+      ;;
     *)
       echo "Unknown argument: $1" >&2
       echo "Usage: bash scripts/record.sh --config path/to/config.json [--overwrite] [--resume]" >&2
+      echo "                              [--camera name,index,width,height,fps] ..." >&2
       exit 1
       ;;
   esac
@@ -84,8 +90,6 @@ cfg_path = sys.argv[1]
 with open(cfg_path, "r", encoding="utf-8") as f:
     cfg = json.load(f)
 
-camera = cfg.get("camera", {})
-
 pairs = {
     "PROFILE_NAME": cfg.get("profile_name"),
     "HF_DATASET_OWNER": cfg.get("hf_dataset_owner"),
@@ -94,15 +98,31 @@ pairs = {
     "NUM_EPISODES": cfg.get("num_episodes"),
     "EPISODE_TIME_S": cfg.get("episode_time_s"),
     "RESET_TIME_S": cfg.get("reset_time_s"),
-    "CAMERA_INDEX": camera.get("fallback_index"),
-    "CAMERA_WIDTH": camera.get("width"),
-    "CAMERA_HEIGHT": camera.get("height"),
-    "CAMERA_FPS": camera.get("fps"),
 }
 
 for key, value in pairs.items():
     if value is not None and value != "":
         print(f"{key}={shlex.quote(str(value))}")
+
+# Build CAMERAS_FROM_CONFIG: prefer "cameras" list, fall back to singular "camera"
+cameras_list = cfg.get("cameras")
+if cameras_list:
+    entries = []
+    for cam in cameras_list:
+        name  = cam.get("name", "front")
+        index = cam.get("fallback_index", 0)
+        w     = cam.get("width", 640)
+        h     = cam.get("height", 480)
+        fps   = cam.get("fps", 30)
+        entries.append(f"{name},{index},{w},{h},{fps}")
+    print(f"CAMERAS_FROM_CONFIG={shlex.quote('|'.join(entries))}")
+else:
+    cam = cfg.get("camera", {})
+    index = cam.get("fallback_index", 0)
+    w     = cam.get("width", 640)
+    h     = cam.get("height", 480)
+    fps   = cam.get("fps", 30)
+    print(f"CAMERAS_FROM_CONFIG={shlex.quote(f'front,{index},{w},{h},{fps}')}")
 PY
 )"
 
@@ -111,10 +131,6 @@ PY
 : "${NUM_EPISODES:=20}"
 : "${EPISODE_TIME_S:=25}"
 : "${RESET_TIME_S:=10}"
-: "${CAMERA_INDEX:=0}"
-: "${CAMERA_WIDTH:=640}"
-: "${CAMERA_HEIGHT:=480}"
-: "${CAMERA_FPS:=30}"
 : "${HF_DATASET_PRIVATE:=true}"
 
 required_config_vars=(
@@ -129,6 +145,26 @@ for var_name in "${required_config_vars[@]}"; do
     exit 1
   fi
 done
+
+# If no --camera flags given, use cameras from config JSON
+if [[ ${#CAMERAS[@]} -eq 0 ]]; then
+  IFS='|' read -ra CAMERAS <<< "${CAMERAS_FROM_CONFIG}"
+fi
+
+# Validate and build the cameras dict string: { name: {type: opencv, ...}, ... }
+CAMERAS_STR="{ "
+first=1
+for cam in "${CAMERAS[@]}"; do
+  IFS=',' read -r cam_name cam_index cam_width cam_height cam_fps <<< "${cam}"
+  if [[ -z "${cam_name}" || -z "${cam_index}" || -z "${cam_width}" || -z "${cam_height}" || -z "${cam_fps}" ]]; then
+    echo "Invalid --camera value '${cam}': expected name,index,width,height,fps" >&2
+    exit 1
+  fi
+  [[ ${first} -eq 0 ]] && CAMERAS_STR+=", "
+  CAMERAS_STR+="${cam_name}: {type: opencv, index_or_path: ${cam_index}, width: ${cam_width}, height: ${cam_height}, fps: ${cam_fps}}"
+  first=0
+done
+CAMERAS_STR+=" }"
 
 HF_DATASET_PRIVATE_NORMALIZED="$(printf '%s' "${HF_DATASET_PRIVATE}" | tr '[:upper:]' '[:lower:]')"
 if [[ "${HF_DATASET_PRIVATE_NORMALIZED}" == "true" ]]; then
@@ -229,7 +265,7 @@ cmd=(
   --teleop.type=so101_leader
   --teleop.port="${LEADER_PORT}"
   --teleop.id="${LEADER_ID}"
-  --robot.cameras="{ front: {type: opencv, index_or_path: ${CAMERA_INDEX}, width: ${CAMERA_WIDTH}, height: ${CAMERA_HEIGHT}, fps: ${CAMERA_FPS}}}"
+  --robot.cameras="${CAMERAS_STR}"
   --dataset.repo_id="${DATASET_OWNER}/${DATASET_NAME}"
   --dataset.single_task="${TASK}"
   --dataset.num_episodes="${NUM_EPISODES}"
