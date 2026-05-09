@@ -3,6 +3,7 @@ Camera preview and calibration capture.
 
   --mode opencv (default): raw preview; ENTER/s save, q / ESC quit (no overlays).
   --mode mac: resolution overlays + lid readout + optional -a gong; o saves with overlays burned in.
+  --center-lines: draw horizontal + vertical center lines on the preview only (not on clean saves).
 
 Preview keys (opencv): ENTER / s -> save, q / ESC -> quit
 Preview keys (mac):    ENTER / s -> save clean, o -> save with overlays, q / ESC -> quit
@@ -101,6 +102,15 @@ def draw_mac_preview(frame, idx: int) -> None:
     )
 
 
+def draw_center_lines(frame) -> None:
+    """Horizontal and vertical lines through the image center (BGR, in-place)."""
+    h, w = frame.shape[:2]
+    cx, cy = w // 2, h // 2
+    color = (0, 255, 255)
+    cv2.line(frame, (cx, 0), (cx, h - 1), color, 1, cv2.LINE_AA)
+    cv2.line(frame, (0, cy), (w - 1, cy), color, 1, cv2.LINE_AA)
+
+
 def main(args: argparse.Namespace) -> None:
     if args.mac_lid_angle_target is not None and args.mode != "mac":
         raise SystemExit("--mac-lid-angle-target requires --mode mac")
@@ -153,6 +163,8 @@ def main(args: argparse.Namespace) -> None:
             display = frame.copy()
             if args.mode == "mac":
                 draw_mac_preview(display, idx)
+            if args.center_lines:
+                draw_center_lines(display)
             cv2.imshow(win, display)
 
             key = cv2.waitKey(1) & 0xFF
@@ -211,6 +223,11 @@ if __name__ == "__main__":
         type=str,
         default=DEFAULT_PREFIX,
         help=f"Filename prefix: <prefix>_NN.png (default: {DEFAULT_PREFIX})",
+    )
+    parser.add_argument(
+        "--center-lines",
+        action="store_true",
+        help="Draw horizontal and vertical center lines on the preview (not on clean saves).",
     )
     args = parser.parse_args()
     main(args)
