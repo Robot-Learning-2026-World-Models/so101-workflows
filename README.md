@@ -106,7 +106,8 @@ bash scripts/record.sh --config configs/tasks/<TASK_NAME>.json --resume
 ```
 
 `--resume` continues from local cache at
-`~/.cache/huggingface/lerobot/<owner>/<dataset_name>`.
+`~/.cache/huggingface/lerobot/<owner>/<dataset_name>`. On each resume run the
+script first **downloads the full dataset from the Hub** into that path to prevent overwriting Hub data with metadata-only copy.
 
 When resuming, you can update timing/count settings in your task config (for
 example `num_episodes`, `episode_time_s`, `reset_time_s`). These changes apply

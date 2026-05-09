@@ -172,6 +172,55 @@ if [[ "${OVERWRITE}" -eq 1 ]]; then
   fi
 fi
 
+# LeRobot's resume path only auto-downloads `meta/` when the local folder is empty.
+# A full Hub upload after recording would then omit existing `data/` and `videos/`,
+# effectively overwriting the remote dataset. Pull the complete dataset first so
+# resume works on any machine (same as a warm local cache).
+if [[ "${RESUME}" -eq 1 ]]; then
+  echo "Syncing full dataset from Hugging Face Hub into: ${LOCAL_DATASET_CACHE}"
+  echo "(Required so resume does not replace Hub data with metadata-only copy.)"
+  HF_REPO_ID="${DATASET_OWNER}/${DATASET_NAME}" \
+    HF_LOCAL_ROOT="${LOCAL_DATASET_CACHE}" \
+    uv run python - <<'PY'
+import os
+import sys
+from pathlib import Path
+
+from huggingface_hub import snapshot_download
+from huggingface_hub.errors import HfHubHTTPError, RevisionNotFoundError
+
+from lerobot.datasets.dataset_metadata import CODEBASE_VERSION
+
+repo_id = os.environ["HF_REPO_ID"]
+root = Path(os.environ["HF_LOCAL_ROOT"])
+revision = os.environ.get("HF_DATASET_REVISION") or CODEBASE_VERSION
+
+root.mkdir(parents=True, exist_ok=True)
+
+try:
+    try:
+        snapshot_download(
+            repo_id,
+            repo_type="dataset",
+            revision=revision,
+            local_dir=str(root),
+        )
+    except RevisionNotFoundError:
+        snapshot_download(
+            repo_id,
+            repo_type="dataset",
+            local_dir=str(root),
+        )
+except HfHubHTTPError as exc:
+    print(
+        f"Could not download dataset '{repo_id}' from the Hub ({exc}). "
+        "Resume needs an existing Hub dataset and network access (or run once online).",
+        file=sys.stderr,
+    )
+    sys.exit(1)
+PY
+fi
+
 cmd=(
   uv run lerobot-record
   --robot.type=so101_follower
