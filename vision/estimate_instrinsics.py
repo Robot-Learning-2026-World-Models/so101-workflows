@@ -42,7 +42,13 @@ def calibrate_camera(image_dir, board_size, square_size, output_filename, visual
 
     for image_path in image_paths:
         bgr = cv2.imread(image_path)
+        if bgr is None:
+            print(f"Warning: Could not read image {image_path}. Skipping.")
+            continue
         gray = cv2.cvtColor(bgr, cv2.COLOR_BGR2GRAY)
+        if gray is None:
+            print(f"Warning: Could not convert image {image_path} to grayscale. Skipping.")
+            continue 
         # Find the chess board corners
         ret, corners = cv2.findChessboardCorners(gray, board_size, None)
         # If found, add object points, image points (after refining them)
