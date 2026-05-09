@@ -2,52 +2,63 @@
 
 Helper scripts for SO-101 teleoperation using LeRobot as a third-party dependency.
 
-## 1) Create and activate the conda env
+## 1) Install LeRobot with uv
 
-This project uses a conda env named `lerobot`:
-
-```bash
-conda create -y -n lerobot python=3.12
-conda activate lerobot
-```
-
-LeRobot installation reference:
-[Hugging Face LeRobot Installation](https://huggingface.co/docs/lerobot/en/installation)
-
-## 2) Install uv in that env
+Use Python 3.12, then install LeRobot from PyPI with Feetech motor support:
 
 ```bash
-pip install -U uv
-```
-
-## 3) Install project dependencies from lockfile
-
-From this repo root:
-
-```bash
-uv sync --frozen
-```
-
-If `uv.lock` is missing (first-time bootstrap), run:
-
-```bash
+uv python install 3.12
+uv venv --python 3.12
+source .venv/bin/activate
+uv pip install 'lerobot[feetech]'
 uv sync
 ```
 
-## 4) Configure local robot settings
+On macOS, install `ffmpeg` if it is missing:
+
+```bash
+brew install ffmpeg
+```
+
+LeRobot installation reference:
+[Hugging Face LeRobot Installation](https://huggingface.co/docs/lerobot/en/installation?create_venv=uv+%28PyTorch+%3E%3D+2.10+only%29&install_lerobot_pypi=uv&install_lerobot_src=uv&install_ffmpeg=uv+%28PyTorch+%3E%3D+2.10+only%29&activate_venv=uv+%28PyTorch+%3E%3D+2.10+only%29)
+
+## 2) Configure local robot settings
 
 ```bash
 cp .env.example .env
 ```
 
-Then set:
+Find the ports for the follower and leader arms:
+
+```bash
+uv run lerobot-find-port
+```
+
+Then set these values in `.env`:
 
 - `FOLLOWER_PORT`
 - `LEADER_PORT`
 - `FOLLOWER_ID`
 - `LEADER_ID`
 
-## 5) Run teleoperation
+## 3) Copy calibration files into the LeRobot cache
+
+After `.env` has the correct IDs, copy the checked-in calibration files to the
+cache paths LeRobot expects:
+
+```bash
+set -a; source .env; set +a
+mkdir -p \
+  "$HOME/.cache/huggingface/lerobot/calibration/robots/so_follower" \
+  "$HOME/.cache/huggingface/lerobot/calibration/teleoperators/so_leader"
+cp "configs/calibration/follower/${FOLLOWER_ID}.json" \
+  "$HOME/.cache/huggingface/lerobot/calibration/robots/so_follower/${FOLLOWER_ID}.json"
+cp "configs/calibration/leader/${LEADER_ID}.json" \
+  "$HOME/.cache/huggingface/lerobot/calibration/teleoperators/so_leader/${LEADER_ID}.json"
+```
+
+## 4) Run teleoperation
 
 ```bash
 bash scripts/teleop.sh
@@ -57,7 +68,7 @@ Optional flags:
 
 - enable data display: `bash scripts/teleop.sh --display-data`
 
-## 6) Record and upload dataset to Hugging Face (user or org)
+## 5) Record and upload dataset to Hugging Face (user or org)
 
 Task configs live in `configs/tasks/*.json`, and `--config` is required:
 
@@ -124,7 +135,7 @@ Keep it minimal before recording:
 - verify the camera index with `lerobot-find-cameras opencv`
 - use a unique `dataset_name` for each dataset version
 
-## 7) Replay an episode on the follower
+## 6) Replay an episode on the follower
 
 Replays stored actions from a LeRobot dataset (local cache under
 `~/.cache/huggingface/lerobot/...`, or pulled from the Hub if needed).
