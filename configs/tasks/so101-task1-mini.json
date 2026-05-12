@@ -1,17 +1,17 @@
 {
   "profile_name": "so101-task1-mini",
   "hf_dataset_owner": "rl26-world-models",
-  "dataset_name": "so101-task1-mini-v1",
+  "dataset_name": "so101-task1-mini-v2",
   "task": "roll the object from the start position to the target position",
-  "num_episodes": 10,
+  "num_episodes": 30,
   "episode_time_s": 40,
-  "reset_time_s": 6,
+  "reset_time_s": 10,
   "camera": {
     "backend": "opencv",
     "preferred_name": "USB2.0_CAM1",
     "fallback_index": 0,
-    "width": 640,
-    "height": 480,
+    "width": 1920,
+    "height": 1080,
     "fps": 30,
     "min_test_frames": 30
   },

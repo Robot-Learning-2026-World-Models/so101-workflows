@@ -132,6 +132,11 @@ PY
 : "${EPISODE_TIME_S:=25}"
 : "${RESET_TIME_S:=10}"
 : "${HF_DATASET_PRIVATE:=true}"
+# Streaming video encoding: encodes episodes on the fly for much faster saving.
+# Set STREAMING_ENCODING=false to disable on slower hardware.
+: "${STREAMING_ENCODING:=true}"
+: "${ENCODER_THREADS:=2}"
+: "${VCODEC:=auto}"
 
 required_config_vars=(
   DATASET_NAME
@@ -171,6 +176,13 @@ if [[ "${HF_DATASET_PRIVATE_NORMALIZED}" == "true" ]]; then
   HF_DATASET_PRIVATE_NORMALIZED="true"
 else
   HF_DATASET_PRIVATE_NORMALIZED="false"
+fi
+
+STREAMING_ENCODING_NORMALIZED="$(printf '%s' "${STREAMING_ENCODING}" | tr '[:upper:]' '[:lower:]')"
+if [[ "${STREAMING_ENCODING_NORMALIZED}" == "true" ]]; then
+  STREAMING_ENCODING_NORMALIZED="true"
+else
+  STREAMING_ENCODING_NORMALIZED="false"
 fi
 
 # Ensure HF CLI auth exists (do not force interactive login in script)
@@ -272,8 +284,14 @@ cmd=(
   --dataset.episode_time_s="${EPISODE_TIME_S}"
   --dataset.reset_time_s="${RESET_TIME_S}"
   --dataset.private="${HF_DATASET_PRIVATE_NORMALIZED}"
+  --dataset.streaming_encoding="${STREAMING_ENCODING_NORMALIZED}"
   --display_data=true
 )
+
+if [[ "${STREAMING_ENCODING_NORMALIZED}" == "true" ]]; then
+  cmd+=(--dataset.encoder_threads="${ENCODER_THREADS}")
+  cmd+=(--dataset.vcodec="${VCODEC}")
+fi
 
 if [[ "${RESUME}" -eq 1 ]]; then
   cmd+=(--resume=true)

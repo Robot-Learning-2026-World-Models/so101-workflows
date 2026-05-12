@@ -4,11 +4,11 @@
   "dataset_name": "so101-task1-mini-v1-birdview",
   "task": "roll the object from the start position to the target position",
   "num_episodes": 50,
-  "episode_time_s": 60,
+  "episode_time_s": 40,
   "reset_time_s": 10,
   "cameras": [
-    {"name": "front", "fallback_index": 1, "width": 1920, "height": 1080, "fps": 30},
-    {"name": "top",  "fallback_index": 0, "width": 1920, "height": 1080, "fps": 30}
+    {"name": "front", "fallback_index": 0, "width": 1920, "height": 1080, "fps": 30},
+    {"name": "top",  "fallback_index": 2, "width": 1920, "height": 1080, "fps": 30}
   ],
   "robot": {
     "follower_port_env": "FOLLOWER_PORT",

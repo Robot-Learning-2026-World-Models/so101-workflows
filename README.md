@@ -93,6 +93,18 @@ Uploads are private by default. To make uploads public, set this in `.env`:
 HF_DATASET_PRIVATE=false
 ```
 
+Streaming video encoding is enabled by default (episodes are encoded on the fly
+for much faster saving). On slower hardware, disable it in `.env`:
+
+```bash
+STREAMING_ENCODING=false
+# optional tuning when enabled (defaults shown):
+# ENCODER_THREADS=2
+# VCODEC=auto
+```
+
+See: <https://huggingface.co/docs/lerobot/streaming_video_encoding>
+
 Then run:
 
 ```bash
