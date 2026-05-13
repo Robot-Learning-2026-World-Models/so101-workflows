@@ -1,7 +1,7 @@
 {
   "profile_name": "so101-first-dataset",
   "hf_dataset_owner": "rl26-world-models",
-  "dataset_name": "so101-pick-place-v1",
+  "dataset_name": "so101-test-dataset",
   "task": "pick up the object and place it in the target area",
   "num_episodes": 20,
   "episode_time_s": 20,
@@ -10,10 +10,9 @@
     "backend": "opencv",
     "preferred_name": "USB2.0_CAM1",
     "fallback_index": 0,
-    "width": 640,
-    "height": 480,
-    "fps": 30,
-    "min_test_frames": 30
+    "width": 320,
+    "height": 240,
+    "fps": 20
   },
   "robot": {
     "follower_port_env": "FOLLOWER_PORT",

@@ -1,17 +1,17 @@
 {
   "profile_name": "so101-task2-mini",
   "hf_dataset_owner": "rl26-world-models",
-  "dataset_name": "so101-task2-mini-v1",
+  "dataset_name": "so101-task2-1080p-v1",
   "task": "roll the from the start position to the target position, while avoiding the obstacle",
-  "num_episodes": 10,
-  "episode_time_s": 45,
-  "reset_time_s": 6,
+  "num_episodes": 30,
+  "episode_time_s": 50,
+  "reset_time_s": 10,
   "camera": {
     "backend": "opencv",
     "preferred_name": "USB2.0_CAM1",
     "fallback_index": 0,
-    "width": 640,
-    "height": 480,
+    "width": 1920,
+    "height": 1080,
     "fps": 30,
     "min_test_frames": 30
   },

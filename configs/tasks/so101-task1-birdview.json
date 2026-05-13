@@ -1,7 +1,7 @@
 {
-  "profile_name": "so101-task1-mini-birdview",
+  "profile_name": "so101-task1-birdview",
   "hf_dataset_owner": "rl26-world-models",
-  "dataset_name": "so101-task1-mini-v1-birdview",
+  "dataset_name": "so101-task1-birdview-v1",
   "task": "roll the object from the start position to the target position",
   "num_episodes": 50,
   "episode_time_s": 40,

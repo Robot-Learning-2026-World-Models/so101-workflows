@@ -1,7 +1,7 @@
 {
   "profile_name": "so101-task1-mini",
   "hf_dataset_owner": "rl26-world-models",
-  "dataset_name": "so101-task1-mini-v2",
+  "dataset_name": "so101-task1-1080p-v1",
   "task": "roll the object from the start position to the target position",
   "num_episodes": 30,
   "episode_time_s": 40,
