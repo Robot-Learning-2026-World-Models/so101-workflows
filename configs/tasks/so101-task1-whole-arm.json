@@ -3,9 +3,9 @@
   "hf_dataset_owner": "rl26-world-models",
   "dataset_name": "so101-task1-720p-whole-arm",
   "task": "roll the object from the start position to the target position",
-  "num_episodes": 300,
-  "episode_time_s": 60,
-  "reset_time_s": 15,
+  "num_episodes": 100,
+  "episode_time_s": 40,
+  "reset_time_s": 7,
   "camera": {
     "backend": "opencv",
     "preferred_name": "USB2.0_CAM1",
