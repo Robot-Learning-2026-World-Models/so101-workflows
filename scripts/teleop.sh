@@ -45,16 +45,23 @@ done
 
 # Optional camera settings used for teleoperation display.
 : "${CAMERA_INDEX:=0}"
-: "${CAMERA_WIDTH:=640}"
-: "${CAMERA_HEIGHT:=480}"
+: "${CAMERA_WIDTH:=1280}"
+: "${CAMERA_HEIGHT:=720}"
 : "${CAMERA_FPS:=30}"
+: "${CAMERA_FOURCC:=}"
+
+if [[ -n "${CAMERA_FOURCC}" ]]; then
+  CAMERA_CONFIG="{ front: {type: opencv, index_or_path: ${CAMERA_INDEX}, width: ${CAMERA_WIDTH}, height: ${CAMERA_HEIGHT}, fps: ${CAMERA_FPS}, fourcc: ${CAMERA_FOURCC}}}"
+else
+  CAMERA_CONFIG="{ front: {type: opencv, index_or_path: ${CAMERA_INDEX}, width: ${CAMERA_WIDTH}, height: ${CAMERA_HEIGHT}, fps: ${CAMERA_FPS}}}"
+fi
 
 cmd=(
   uv run lerobot-teleoperate
   --robot.type=so101_follower
   --robot.port="${FOLLOWER_PORT}"
   --robot.id="${FOLLOWER_ID}"
-  --robot.cameras="{ front: {type: opencv, index_or_path: ${CAMERA_INDEX}, width: ${CAMERA_WIDTH}, height: ${CAMERA_HEIGHT}, fps: ${CAMERA_FPS}}}"
+  --robot.cameras="${CAMERA_CONFIG}"
   --teleop.type=so101_leader
   --teleop.port="${LEADER_PORT}"
   --teleop.id="${LEADER_ID}"

@@ -33,6 +33,8 @@ Find the ports for the follower and leader arms:
 
 ```bash
 uv run lerobot-find-port
+/dev/ttyACM1
+/dev/ttyACM0
 ```
 
 Then set these values in `.env`:

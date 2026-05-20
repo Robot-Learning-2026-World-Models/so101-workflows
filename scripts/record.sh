@@ -114,15 +114,17 @@ if cameras_list:
         w     = cam.get("width", 640)
         h     = cam.get("height", 480)
         fps   = cam.get("fps", 30)
-        entries.append(f"{name},{index},{w},{h},{fps}")
+        fourcc = cam.get("fourcc", "")
+        entries.append(f"{name},{index},{w},{h},{fps},{fourcc}")
     print(f"CAMERAS_FROM_CONFIG={shlex.quote('|'.join(entries))}")
 else:
     cam = cfg.get("camera", {})
-    index = cam.get("fallback_index", 0)
-    w     = cam.get("width", 640)
-    h     = cam.get("height", 480)
-    fps   = cam.get("fps", 30)
-    print(f"CAMERAS_FROM_CONFIG={shlex.quote(f'front,{index},{w},{h},{fps}')}")
+    index  = cam.get("fallback_index", 0)
+    w      = cam.get("width", 640)
+    h      = cam.get("height", 480)
+    fps    = cam.get("fps", 30)
+    fourcc = cam.get("fourcc", "")
+    print(f"CAMERAS_FROM_CONFIG={shlex.quote(f'front,{index},{w},{h},{fps},{fourcc}')}")
 PY
 )"
 
@@ -137,6 +139,7 @@ PY
 : "${STREAMING_ENCODING:=true}"
 : "${ENCODER_THREADS:=2}"
 : "${VCODEC:=auto}"
+: "${CAMERA_FOURCC:=MJPG}"
 
 required_config_vars=(
   DATASET_NAME
@@ -160,13 +163,19 @@ fi
 CAMERAS_STR="{ "
 first=1
 for cam in "${CAMERAS[@]}"; do
-  IFS=',' read -r cam_name cam_index cam_width cam_height cam_fps <<< "${cam}"
+  IFS=',' read -r cam_name cam_index cam_width cam_height cam_fps cam_fourcc <<< "${cam}"
   if [[ -z "${cam_name}" || -z "${cam_index}" || -z "${cam_width}" || -z "${cam_height}" || -z "${cam_fps}" ]]; then
-    echo "Invalid --camera value '${cam}': expected name,index,width,height,fps" >&2
+    echo "Invalid --camera value '${cam}': expected name,index,width,height,fps[,fourcc]" >&2
     exit 1
   fi
+  # Per-camera fourcc > env var default
+  resolved_fourcc="${cam_fourcc:-${CAMERA_FOURCC}}"
   [[ ${first} -eq 0 ]] && CAMERAS_STR+=", "
-  CAMERAS_STR+="${cam_name}: {type: opencv, index_or_path: ${cam_index}, width: ${cam_width}, height: ${cam_height}, fps: ${cam_fps}}"
+  if [[ -n "${resolved_fourcc}" ]]; then
+    CAMERAS_STR+="${cam_name}: {type: opencv, index_or_path: ${cam_index}, width: ${cam_width}, height: ${cam_height}, fps: ${cam_fps}, fourcc: ${resolved_fourcc}}"
+  else
+    CAMERAS_STR+="${cam_name}: {type: opencv, index_or_path: ${cam_index}, width: ${cam_width}, height: ${cam_height}, fps: ${cam_fps}}"
+  fi
   first=0
 done
 CAMERAS_STR+=" }"
