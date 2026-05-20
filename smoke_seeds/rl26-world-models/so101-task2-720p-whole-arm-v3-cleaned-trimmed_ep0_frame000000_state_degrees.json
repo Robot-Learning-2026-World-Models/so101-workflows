@@ -1,0 +1,29 @@
+{
+  "format": "so101_joint_state_degrees",
+  "source": "rl26-world-models/so101-task2-720p-whole-arm-v3-cleaned-trimmed episode 0 frame 0",
+  "units": "degrees",
+  "joint_names": [
+    "shoulder_pan.pos",
+    "shoulder_lift.pos",
+    "elbow_flex.pos",
+    "wrist_flex.pos",
+    "wrist_roll.pos",
+    "gripper.pos"
+  ],
+  "state": [
+    -12.490479933851947,
+    -100.8405719430249,
+    95.05369821220357,
+    64.8015266292961,
+    1.0313240312354817,
+    0.8594366926962348
+  ],
+  "source_radians_by_joint": {
+    "gripper.pos": 0.015,
+    "wrist_roll.pos": 0.018,
+    "wrist_flex.pos": 1.131,
+    "elbow_flex.pos": 1.659,
+    "shoulder_lift.pos": -1.76,
+    "shoulder_pan.pos": -0.218
+  }
+}

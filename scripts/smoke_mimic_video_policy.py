@@ -69,6 +69,25 @@ def _load_visual_context(
     return _load_image(path, width=width, height=height)
 
 
+def _load_state(path: Path | None, *, action_dim: int, lowdim_horizon: int) -> np.ndarray:
+    if path is None:
+        return np.zeros((max(1, lowdim_horizon), action_dim), dtype=np.float32)
+
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    state = payload.get("state", payload)
+    if isinstance(state, dict):
+        state = [state[name] for name in _SO101_JOINT_NAMES]
+    arr = np.asarray(state, dtype=np.float32)
+    if arr.ndim != 1 or arr.shape[0] != action_dim:
+        raise ValueError(f"Expected state shape ({action_dim},), got {arr.shape} from {path}.")
+
+    joint_names = payload.get("joint_names") if isinstance(payload, dict) else None
+    if joint_names is not None and list(joint_names) != _SO101_JOINT_NAMES:
+        raise ValueError(f"Unexpected joint order in {path}: {joint_names}")
+
+    return np.repeat(arr[None, :], max(1, lowdim_horizon), axis=0)
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run mimic-video policy inference and discard the action.")
     parser.add_argument("--video-model-path", type=Path, required=True)
@@ -78,6 +97,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--prompt-embedding-path", type=Path)
     parser.add_argument("--image-path", type=Path, help="Optional seed image or video path.")
     parser.add_argument("--video-start-frame", type=int, help="Zero-based frame index for the seed video window.")
+    parser.add_argument("--state-path", type=Path, help="Optional JSON state seed in SO101 joint degrees.")
     parser.add_argument("--prompt", default="the robot arm gently nudges the white object towards the target circle")
     parser.add_argument("--device", default="cuda")
     parser.add_argument("--num-sampling-steps", type=int)
@@ -113,6 +133,7 @@ def _save_trajectory(
         "seed": args.seed,
         "image_path": None if args.image_path is None else str(args.image_path),
         "video_start_frame": args.video_start_frame,
+        "state_path": None if args.state_path is None else str(args.state_path),
         "denoised_video_path": None
         if policy.last_denoised_video_path is None
         else str(policy.last_denoised_video_path),
@@ -154,7 +175,11 @@ def main() -> None:
         max_video_frames=max_video_frames,
         video_start_frame=args.video_start_frame,
     )
-    state = np.zeros((max(1, policy.config.lowdim_horizon), policy.config.action_dim), dtype=np.float32)
+    state = _load_state(
+        args.state_path,
+        action_dim=policy.config.action_dim,
+        lowdim_horizon=policy.config.lowdim_horizon,
+    )
     batch = {
         policy.config.camera_key: torch.from_numpy(image),
         policy.config.state_key: torch.from_numpy(state),
@@ -166,6 +191,7 @@ def main() -> None:
     print("mimic-video smoke pass complete")
     print(f"action trajectory shape: {tuple(action_trajectory.shape)}")
     print(f"action trajectory dtype: {action_trajectory.dtype}")
+    print(f"state seed: {state[0].tolist()}")
     print(f"action trajectory: {action_trajectory.detach().cpu().tolist()}")
     print(f"first action: {action_trajectory[0].detach().cpu().tolist()}")
     if policy.last_denoised_video_path is not None:

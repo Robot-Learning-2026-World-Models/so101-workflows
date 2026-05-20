@@ -14,6 +14,7 @@ MIMIC_STATS_PATH="$CKPT_DIR/dataset_statistics/so101_task1_2_stats.json"
 PROMPT_EMBEDDING_PATH="${PROMPT_EMBEDDING_PATH:-$REPO_ROOT/checkpoints/inference_t5_embeddings/the_robot_arm_gently_nudges_the_white_object_towards_the_target_circle_while_avoiding_the_red_cylinder.pickle}"
 SMOKE_IMAGE_PATH="${SMOKE_IMAGE_PATH:-$REPO_ROOT/smoke_seeds/rl26-world-models/so101-task2-720p-whole-arm-v3-cleaned-trimmed_ep0.mp4}"
 SMOKE_VIDEO_START_FRAME="${SMOKE_VIDEO_START_FRAME:-0}"
+SMOKE_STATE_PATH="${SMOKE_STATE_PATH:-$REPO_ROOT/smoke_seeds/rl26-world-models/so101-task2-720p-whole-arm-v3-cleaned-trimmed_ep0_frame000000_state_degrees.json}"
 
 for path in "$MIMIC_VIDEO_MODEL_PATH" "$MIMIC_ACTION_MODEL_PATH" "$MIMIC_STATS_PATH"; do
   if [[ ! -f "$path" ]]; then
@@ -63,6 +64,10 @@ fi
 
 if [[ -n "$SMOKE_VIDEO_START_FRAME" ]]; then
   args+=(--video-start-frame "$SMOKE_VIDEO_START_FRAME")
+fi
+
+if [[ -n "$SMOKE_STATE_PATH" ]]; then
+  args+=(--state-path "$SMOKE_STATE_PATH")
 fi
 
 if [[ -n "${SMOKE_NUM_SAMPLING_STEPS:-}" ]]; then
