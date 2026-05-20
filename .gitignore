@@ -7,3 +7,4 @@ __pycache__/
 .DS_Store
 cam_images/*.png
 calibration/
+videos/

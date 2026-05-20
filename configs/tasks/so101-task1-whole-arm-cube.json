@@ -1,0 +1,24 @@
+{
+  "profile_name": "so101-task1-whole-arm-cube",
+  "hf_dataset_owner": "rl26-world-models",
+  "dataset_name": "so101-task1-720p-whole-arm-cube",
+  "task": "the robot arm gently slides the colored cube towards the target circle",
+  "num_episodes": 60,
+  "episode_time_s": 40,
+  "reset_time_s": 7,
+  "camera": {
+    "backend": "opencv",
+    "preferred_name": "USB2.0_CAM1",
+    "fallback_index": 0,
+    "width": 1280,
+    "height": 720,
+    "fps": 10,
+    "min_test_frames": 30
+  },
+  "robot": {
+    "follower_port_env": "FOLLOWER_PORT",
+    "leader_port_env": "LEADER_PORT",
+    "follower_id_env": "FOLLOWER_ID",
+    "leader_id_env": "LEADER_ID"
+  }
+}
