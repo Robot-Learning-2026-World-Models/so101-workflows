@@ -2,7 +2,7 @@
   "profile_name": "so101-task1-whole-arm-cube",
   "hf_dataset_owner": "rl26-world-models",
   "dataset_name": "so101-task1-720p-whole-arm-cube",
-  "task": "the robot arm gently slides the colored cube towards the target circle",
+  "task": "the robot arm gently nudges the colored cube towards the target circle",
   "num_episodes": 60,
   "episode_time_s": 40,
   "reset_time_s": 7,
