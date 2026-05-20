@@ -40,6 +40,14 @@ args=(
   --seed "${MIMIC_SEED:-0}"
 )
 
+if [[ "${SMOKE_SAVE_VIDEO:-1}" != "0" ]]; then
+  args+=(
+    --denoised-video-save-dir "${SMOKE_VIDEO_SAVE_DIR:-$REPO_ROOT/outputs/smoke_policy_videos}"
+    --denoised-video-save-fps "${SMOKE_VIDEO_SAVE_FPS:-10}"
+    --denoised-video-save-prefix "${SMOKE_VIDEO_SAVE_PREFIX:-smoke}"
+  )
+fi
+
 if [[ -n "${SMOKE_IMAGE_PATH:-}" ]]; then
   args+=(--image-path "$SMOKE_IMAGE_PATH")
 fi

@@ -49,6 +49,7 @@ class MimicVideoPolicy(PreTrainedPolicy):
         self.pipeline = self._load_pipeline(config)
         self.prompt_embedding = self._load_prompt_embedding(config)
         self._prediction_index = 0
+        self.last_denoised_video_path = None
 
     def _apply_deployment_config(self, config: MimicVideoPolicyConfig) -> None:
         dc = self.deployment_config
@@ -228,10 +229,12 @@ class MimicVideoPolicy(PreTrainedPolicy):
             sigma_t = scheduler.sigmas[i].to(sample.device, dtype=torch.float32)
             sigma_in = sigma_t.repeat(sample.shape[0])
             return_hidden_states = i == context_step
+            # Partial hidden-state returns skip x0 prediction, but saving video
+            # still needs x0_pred so the scheduler can finish denoising.
             x0_pred = x0_fn(
                 sample,
                 sigma_in,
-                return_only_hidden_states_up_to=hidden_state_layer_idx if return_hidden_states else None,
+                return_only_hidden_states_up_to=float("inf") if return_hidden_states else None,
             )
             if return_hidden_states:
                 x0_pred, hidden_states = x0_pred
@@ -288,6 +291,7 @@ class MimicVideoPolicy(PreTrainedPolicy):
             path = save_dir / filename
             frames = self._video_tensor_to_uint8_frames(video)
             imageio.mimsave(path, frames, fps=self.config.denoised_video_save_fps)
+            self.last_denoised_video_path = path
             LOGGER.info("Saved denoised mimic-video rollout to %s", path)
         except Exception:
             LOGGER.exception(

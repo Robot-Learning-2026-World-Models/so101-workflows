@@ -36,6 +36,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--device", default="cuda")
     parser.add_argument("--num-sampling-steps", type=int)
     parser.add_argument("--stop-video-denoising-step", type=int)
+    parser.add_argument("--denoised-video-save-dir", type=Path)
+    parser.add_argument("--denoised-video-save-fps", type=int, default=10)
+    parser.add_argument("--denoised-video-save-prefix", default="smoke")
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--use-cuda-graphs", action=argparse.BooleanOptionalAction, default=True)
     return parser.parse_args()
@@ -53,6 +56,9 @@ def main() -> None:
         device=args.device,
         seed=args.seed,
         use_cuda_graphs=args.use_cuda_graphs,
+        denoised_video_save_dir=args.denoised_video_save_dir,
+        denoised_video_save_fps=args.denoised_video_save_fps,
+        denoised_video_save_prefix=args.denoised_video_save_prefix,
     )
     if args.num_sampling_steps is not None:
         config.num_sampling_steps = args.num_sampling_steps
@@ -74,6 +80,10 @@ def main() -> None:
     print(f"action shape: {tuple(action.shape)}")
     print(f"action dtype: {action.dtype}")
     print(f"action: {action.detach().cpu().tolist()}")
+    if policy.last_denoised_video_path is not None:
+        print(f"video saved: {policy.last_denoised_video_path}")
+    elif policy.config.denoised_video_save_dir is not None:
+        print(f"video save requested under: {policy.config.denoised_video_save_dir.expanduser()}")
     print("action discarded; no robot was connected")
 
 
