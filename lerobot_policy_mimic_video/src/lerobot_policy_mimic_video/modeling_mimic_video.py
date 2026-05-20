@@ -8,16 +8,7 @@ import torch
 from einops import rearrange
 from PIL import Image
 
-
-class PreTrainedPolicy(torch.nn.Module):
-    """Minimal LeRobot-compatible policy base for this custom gRPC server."""
-
-    config_class = None
-    name = None
-
-    def __init__(self, config, *args, **kwargs):
-        super().__init__()
-        self.config = config
+from lerobot.policies.pretrained import PreTrainedPolicy
 
 from cosmos_predict2.configs.config import make_config
 from cosmos_predict2.data.action.types import NormalizationType

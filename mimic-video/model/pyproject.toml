@@ -24,7 +24,7 @@ authors = [
   {name = "NVIDIA Corporation"},
 ]
 description = "Cosmos World Foundation Model"
-requires-python = "==3.10.*"
+requires-python = "==3.12.*"
 license = {text = "Apache-2.0"}
 classifiers = [
   "Development Status :: 4 - Beta",
@@ -76,7 +76,7 @@ dependencies = [
   "threadpoolctl==3.6.0",
   "tqdm==4.66.5",
   "transformers==4.51.3",
-  "triton==3.2.0",
+  "triton==3.3.0",
   "tyro==1.0.8",
   "webdataset==0.2.111",
 ]
@@ -86,11 +86,11 @@ cu126 = [
   "apex==0.1.0",
   "flash-attn==2.6.3",
   "natten==0.21.0",
-  "torch==2.6.0",
-  "torchvision==0.21.0",
+  "torch==2.7.0",
+  "torchvision==0.22.0",
   "transformer-engine==1.13",
   # Torch dependencies
-  # Dependencies determined from `uv pip install "torch==2.6.0" --index-url https://download.pytorch.org/whl/cu126`
+  # Dependencies determined from `uv pip install "torch==2.7.0" --index-url https://download.pytorch.org/whl/cu126`
   # Issue: https://github.com/astral-sh/uv/issues/14237
   "nvidia-cublas-cu12==12.6.4.1",
   "nvidia-cuda-cupti-cu12==12.6.80",
@@ -102,7 +102,7 @@ cu126 = [
   "nvidia-cusolver-cu12==11.7.1.2",
   "nvidia-cusparse-cu12==12.5.4.2",
   "nvidia-cusparselt-cu12==0.6.3",
-  "nvidia-nccl-cu12==2.21.5",
+  "nvidia-nccl-cu12==2.26.2",
   "nvidia-nvjitlink-cu12==12.6.85",
   "nvidia-nvtx-cu12==12.6.77",
 ]
@@ -123,7 +123,7 @@ repository = "https://github.com/nvidia-cosmos/cosmos-predict2"
 
 [tool.uv]
 environments = [
-  "python_version == '3.10' and sys_platform == 'linux' and platform_machine == 'x86_64'",
+  "python_version == '3.12' and sys_platform == 'linux' and platform_machine == 'x86_64'",
 ]
 no-build-package = [
   "apex",
@@ -132,7 +132,7 @@ no-build-package = [
   "transformer-engine",
 ]
 required-environments = [
-    "python_version == '3.10' and sys_platform == 'linux' and platform_machine == 'x86_64'",
+    "python_version == '3.12' and sys_platform == 'linux' and platform_machine == 'x86_64'",
 ]
 
 [tool.uv.sources]
@@ -149,15 +149,20 @@ transformer-engine = [
   { index = "cosmos-cu126", extra = "cu126" },
 ]
 torch = [
-  { index = "cosmos-cu126", extra = "cu126" },
+  { index = "pytorch-cu126", extra = "cu126" },
 ]
 torchvision = [
-  { index = "cosmos-cu126", extra = "cu126" },
+  { index = "pytorch-cu126", extra = "cu126" },
 ]
 
 [[tool.uv.index]]
 name = "cosmos-cu126"
 url = "https://nvidia-cosmos.github.io/cosmos-dependencies/cu126_torch260/simple"
+explicit = true
+
+[[tool.uv.index]]
+name = "pytorch-cu126"
+url = "https://download.pytorch.org/whl/cu126"
 explicit = true
 
 [tool.hatch.build.targets.sdist]
