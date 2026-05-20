@@ -27,6 +27,7 @@ class MimicVideoPolicyConfig(PreTrainedConfig):
     hf_stats_filename: str | None = None
     hf_stats_revision: str | None = None
     training_config: Path | None = None
+    prompt_embedding_path: Path | None = None
     experiment_name: str = "w2a_so101_v2w_pretrained_cosmos_lr1.000e-04_layer20_bsz1"
     prompt: str = "the robot arm pushes the white object towards the goal circle"
     camera_key: str = "observation.images.front"

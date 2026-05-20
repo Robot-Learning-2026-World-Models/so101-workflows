@@ -9,3 +9,5 @@ cam_images/*.png
 calibration/
 videos/
 logs
+checkpoints
+data

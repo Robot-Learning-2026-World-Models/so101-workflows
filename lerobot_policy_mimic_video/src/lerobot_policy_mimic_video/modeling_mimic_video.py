@@ -406,6 +406,12 @@ class MimicVideoPolicy(PreTrainedPolicy):
 
     @staticmethod
     def _load_prompt_embedding(config: MimicVideoPolicyConfig) -> torch.Tensor:
+        if config.prompt_embedding_path is not None:
+            embedding = torch.load(config.prompt_embedding_path, map_location="cpu")
+            if isinstance(embedding, dict):
+                embedding = embedding["prompt_embedding"]
+            return embedding.to(device="cuda", dtype=torch.bfloat16)
+
         text_pipe_cfg = make_config()
         text_pipe_cfg = override(text_pipe_cfg, ["--", f"experiment={config.experiment_name}"])
         text_pipe_cfg.model.config.video_pipe_config.guardrail_config.enabled = False
