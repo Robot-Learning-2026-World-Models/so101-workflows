@@ -11,3 +11,5 @@ videos/
 logs
 checkpoints
 data
+
+*.pyc
