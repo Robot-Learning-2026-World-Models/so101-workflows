@@ -470,3 +470,6 @@ class MimicVideoPolicy(PreTrainedPolicy):
             dtype=torch.bfloat16,
         )
         return Video2World2ActionPipeline(video2world_pipe, world2action_pipe).cuda().eval()
+
+
+MimicVideoPolicyPolicy = MimicVideoPolicy

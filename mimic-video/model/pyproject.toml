@@ -49,12 +49,14 @@ dependencies = [
   "imageio[pyav,ffmpeg]==2.37.0",
   "iopath==0.1.10",
   "ipdb==0.13.13",
+  "lerobot-policy-mimic-video",
   "loguru==0.7.3",
   "mediapy==1.2.4",
   "megatron-core==0.12.1",
   "modelscope==1.26.0",
   "nltk==3.9.1",
-  "numpy==1.26.4",
+  "lerobot[feetech,transformers-dep]==0.5.1",
+  "numpy==2.2.6",
   "nvidia-ml-py==12.535.133",
   "omegaconf==2.3.0",
   "opencv-python==4.11.0.86",
@@ -75,36 +77,18 @@ dependencies = [
   "termcolor==3.1.0",
   "threadpoolctl==3.6.0",
   "tqdm==4.66.5",
-  "transformers==4.51.3",
-  "triton==3.3.0",
+  "transformers==5.3.0",
+  "triton==3.6.0",
   "tyro==1.0.8",
   "webdataset==0.2.111",
 ]
 
 [project.optional-dependencies]
-cu126 = [
-  "apex==0.1.0",
-  "flash-attn==2.6.3",
-  "natten==0.21.0",
-  "torch==2.7.0",
-  "torchvision==0.22.0",
-  "transformer-engine==1.13",
-  # Torch dependencies
-  # Dependencies determined from `uv pip install "torch==2.7.0" --index-url https://download.pytorch.org/whl/cu126`
-  # Issue: https://github.com/astral-sh/uv/issues/14237
-  "nvidia-cublas-cu12==12.6.4.1",
-  "nvidia-cuda-cupti-cu12==12.6.80",
-  "nvidia-cuda-nvrtc-cu12==12.6.77",
-  "nvidia-cuda-runtime-cu12==12.6.77",
-  "nvidia-cudnn-cu12==9.5.1.17",
-  "nvidia-cufft-cu12==11.3.0.4",
-  "nvidia-curand-cu12==10.3.7.77",
-  "nvidia-cusolver-cu12==11.7.1.2",
-  "nvidia-cusparse-cu12==12.5.4.2",
-  "nvidia-cusparselt-cu12==0.6.3",
-  "nvidia-nccl-cu12==2.26.2",
-  "nvidia-nvjitlink-cu12==12.6.85",
-  "nvidia-nvtx-cu12==12.6.77",
+cu128 = [
+  "flash-attn @ https://github.com/lesj0610/flash-attention/releases/download/v2.8.3-cu12-torch2.10-cp312/flash_attn-2.8.3%2Bcu12torch2.10cxx11abiTRUE-cp312-cp312-linux_x86_64.whl",
+  "natten @ https://github.com/SHI-Labs/NATTEN/releases/download/v0.21.6/natten-0.21.6%2Btorch2100cu128-cp312-cp312-linux_x86_64.whl",
+  "torch==2.10.0",
+  "torchvision==0.25.0",
 ]
 
 [project.readme]
@@ -125,44 +109,23 @@ repository = "https://github.com/nvidia-cosmos/cosmos-predict2"
 environments = [
   "python_version == '3.12' and sys_platform == 'linux' and platform_machine == 'x86_64'",
 ]
-no-build-package = [
-  "apex",
-  "flash-attn",
-  "natten",
-  "transformer-engine",
-]
+no-build-package = []
 required-environments = [
     "python_version == '3.12' and sys_platform == 'linux' and platform_machine == 'x86_64'",
 ]
 
 [tool.uv.sources]
-apex = [
-  { index = "cosmos-cu126", extra = "cu126" },
-]
-flash-attn = [
-  { index = "cosmos-cu126", extra = "cu126" },
-]
-natten = [
-  { index = "cosmos-cu126", extra = "cu126" },
-]
-transformer-engine = [
-  { index = "cosmos-cu126", extra = "cu126" },
-]
+"lerobot-policy-mimic-video" = { path = "../../lerobot_policy_mimic_video", editable = true }
 torch = [
-  { index = "pytorch-cu126", extra = "cu126" },
+  { index = "pytorch-cu128", extra = "cu128" },
 ]
 torchvision = [
-  { index = "pytorch-cu126", extra = "cu126" },
+  { index = "pytorch-cu128", extra = "cu128" },
 ]
 
 [[tool.uv.index]]
-name = "cosmos-cu126"
-url = "https://nvidia-cosmos.github.io/cosmos-dependencies/cu126_torch260/simple"
-explicit = true
-
-[[tool.uv.index]]
-name = "pytorch-cu126"
-url = "https://download.pytorch.org/whl/cu126"
+name = "pytorch-cu128"
+url = "https://download.pytorch.org/whl/cu128"
 explicit = true
 
 [tool.hatch.build.targets.sdist]
@@ -170,6 +133,9 @@ packages = [
   "cosmos_predict2",
   "imaginaire",
 ]
+
+[tool.hatch.metadata]
+allow-direct-references = true
 
 [tool.hatch.build.targets.wheel]
 packages = [

@@ -1,0 +1,4 @@
+Metadata-Version: 2.1
+Name: transformer-engine
+Version: 2.10.0
+Summary: Local Transformer Engine compatibility shim for Cosmos inference
