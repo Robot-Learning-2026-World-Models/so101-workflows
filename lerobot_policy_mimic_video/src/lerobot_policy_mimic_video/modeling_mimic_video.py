@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import pickle
 from typing import Any
 
 import numpy as np
@@ -407,10 +408,15 @@ class MimicVideoPolicy(PreTrainedPolicy):
     @staticmethod
     def _load_prompt_embedding(config: MimicVideoPolicyConfig) -> torch.Tensor:
         if config.prompt_embedding_path is not None:
-            embedding = torch.load(config.prompt_embedding_path, map_location="cpu")
+            if config.prompt_embedding_path.suffix in {".pickle", ".pkl"}:
+                with config.prompt_embedding_path.open("rb") as f:
+                    embedding = pickle.load(f)
+            else:
+                embedding = torch.load(config.prompt_embedding_path, map_location="cpu")
             if isinstance(embedding, dict):
                 embedding = embedding["prompt_embedding"]
-            return embedding.to(device="cuda", dtype=torch.bfloat16)
+            embedding = torch.as_tensor(embedding)
+            return embedding.to(device=config.device, dtype=torch.bfloat16)
 
         text_pipe_cfg = make_config()
         text_pipe_cfg = override(text_pipe_cfg, ["--", f"experiment={config.experiment_name}"])
